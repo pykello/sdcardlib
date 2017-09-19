@@ -1,10 +1,10 @@
 
+#include "sdcardlib/sd.h"
 
 typedef int int32_t;
 typedef unsigned int uint32_t;
 
 volatile uint32_t * const UART0DR = (uint32_t *) 0x101f1000;
-volatile uint32_t * const SDHC_BASE = (uint32_t *) 0x10005000;
 
 #define SD_REG_PRESENT_STATUS 0x24;
 #define COMMAND_INHIBIT_CMD 0x1;
@@ -15,16 +15,6 @@ void print_uart0(const char *s) {
  *UART0DR = (unsigned int)(*s); /* Transmit char */
  s++; /* Next char */
  }
-}
-
-static void write32(uint32_t address, uint32_t value)
-{
-	*((volatile uint32_t *) address) = value;
-}
-
-static uint32_t read32(uint32_t address)
-{
-	return *((volatile uint32_t *) address);
 }
 
 /*
@@ -44,5 +34,6 @@ issue_sd_command() {
 
 void c_entry() {
  print_uart0("Hello world!\n");
+ set_sd_register_map_base((void *) 0x10005000);
 
 }

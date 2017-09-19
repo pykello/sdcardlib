@@ -1,4 +1,6 @@
 
+#include "sdcardlib/sd.h"
+
 /*
  * Physical Layer Spec v2.00, Page 49.
  */
@@ -34,30 +36,30 @@ struct CommandRegister {
 		RESP_LEN136 = 1,
 		RESP_LEN48 = 2,
 		RESP_LEN48_CHECK_BUSY = 3
-	} responseTypeSelect : 2;
+	} response_type_select : 2;
 	/* 0 Main Command, 1 Sub Command. */
-	int subCommandFlag : 1;
+	int sub_command_flag : 1;
 	/* Check CRC field in the response. */
-	int commandCrcCheckEnable : 1;
+	int command_crc_check_enable : 1;
 	/* Check index field in the response to see it matches command index. */
-	int commandIndexCheckEnable : 1;
+	int command_index_check_enable : 1;
 	/*
 	 * 0 is used for (1) commands using only CMD line, (2) Commands with no data
 	 * transfer but using busy signal on DAT[0] line, (3) Resume command.
 	 */
-	int dataPresentSelect : 1;
+	int data_present_select : 1;
 	/* 11b Abort, 10b Resume, 01b Suspend, 00 Other commands */
 	enum {
 		CMD_NORMAL = 0,
 		CMD_SUSPEND = 1,
 		CMD_RESUME = 2,
 		CMD_ABORT = 3
-	} commandType : 2;
+	} command_type : 2;
 	/*
 	 * Command number that is specified in bits 45-40 of the Command-Format in
 	 * the Physical Layer Specification and SDIO Card Specification.
 	 */
-	enum CommandIndex commandIndex : 6;
+	enum CommandIndex command_index : 6;
 	int reserved : 2;
 };
 
@@ -66,34 +68,40 @@ struct CommandRegister {
  * Cat. C, Offset 024h.
  */
 struct PresentStateRegister {
-	int commandInhibitCmd : 1;
-	int commandInhibitDat : 1;
-	int datLineActive : 1;
-	int reTuningRequest : 1;
-	int lineSignalLevel7to4 : 4;
-	int writeTransferActive : 1;
-	int readTransferActive : 1;
-	int bufferWriteEnable : 1;
-	int bufferReadEnable : 1;
-	int reserved1 : 4;
-	int cardInserted : 1;
-	int cardStateStable : 1;
-	int cardDetectPinLevel : 1;
-	int writeProtectSwitchPinLevel : 1;
-	int lineSignalLevel3to0 : 4;
-	int cmdLineSignalLevel : 1;
-	int hostRegularVoltageStable : 1;
-	int reserved2 : 1;
-	int commandNotIssuedByError : 1;
-	int subCommandStatus : 1;
-	int inDormantState : 1;
-	int laneSync : 1;
-	int uhs2IfDetection : 1;
+	int command_inhibit_cmd : 1;
+	int command_inhibit_dat : 1;
+	int dat_line_active : 1;
+	int retuning_request : 1;
+	int line_signal_level_7_to_4 : 4;
+	int write_transfer_active : 1;
+	int read_transfer_active : 1;
+	int buffer_write_enable : 1;
+	int buffer_read_enable : 1;
+	int reserved_1 : 4;
+	int card_inserted : 1;
+	int card_state_stable : 1;
+	int card_detect_pin_level : 1;
+	int write_protect_switch_pin_level : 1;
+	int line_signal_level_3_to_0 : 4;
+	int cmd_line_signal_level : 1;
+	int host_regular_voltage_stable : 1;
+	int reserved_2 : 1;
+	int command_not_issued_by_error : 1;
+	int sub_command_status : 1;
+	int in_dormant_state : 1;
+	int lane_sync : 1;
+	int uhs2_if_detection : 1;
 };
 
-struct __attribute__((__packed__)) SDRegisterMap {
-	char reserved1[14];
-	struct CommandRegister commandRegister;
-	char reserved2[20];
-	struct PresentStateRegister presentStateRegister;
-};
+static volatile struct __attribute__((__packed__)) {
+	char reserved_1[14];
+	struct CommandRegister command_register;
+	char reserved_2[20];
+	struct PresentStateRegister present_state_register;
+} *sd_register_map;
+
+
+void set_sd_register_map_base(void *address) {
+	sd_register_map = address;
+}
+

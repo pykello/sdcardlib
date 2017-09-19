@@ -12,7 +12,7 @@ CPU = arm926ej-s
 CFLAGS = -mcpu=$(CPU) -gstabs -marm \
          -std=c99 -pedantic -Wall -Wextra -msoft-float -fPIC -mapcs-frame \
          -fno-builtin-printf -fno-builtin-strcpy -Wno-overlength-strings \
-         -fno-builtin-exit
+         -fno-builtin-exit -I.
 ASFLAGS = -mcpu=$(CPU) -g
 
 OBJS = startup.o test.o
@@ -20,7 +20,7 @@ OBJS = startup.o test.o
 include sdcardlib/build.mk
 
 test.bin: $(OBJS) test.ld
-	arm-none-eabi-ld -T test.ld test.o startup.o -o test.elf
+	arm-none-eabi-ld -T test.ld $(OBJS) -o test.elf
 	arm-none-eabi-objcopy -O binary test.elf test.bin
 
 qemu:
