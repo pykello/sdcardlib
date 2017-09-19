@@ -1,4 +1,7 @@
 
+/*
+ * Physical Layer Spec v2.00, Page 49.
+ */
 enum CommandIndex {
 	/* Basic commands */
 	GO_IDLE_STATE = 0,
@@ -23,7 +26,7 @@ enum CommandIndex {
 };
 
 /*
- * SDHCSS V4.20, Page 45.
+ * SD Host Controller Spec v4.20, Page 45.
  */
 struct CommandRegister {
 	enum {
@@ -56,4 +59,41 @@ struct CommandRegister {
 	 */
 	enum CommandIndex commandIndex : 6;
 	int reserved : 2;
+};
+
+/*
+ * SD Host Controller Spec v4.20, Page 50.
+ * Cat. C, Offset 024h.
+ */
+struct PresentStateRegister {
+	int commandInhibitCmd : 1;
+	int commandInhibitDat : 1;
+	int datLineActive : 1;
+	int reTuningRequest : 1;
+	int lineSignalLevel7to4 : 4;
+	int writeTransferActive : 1;
+	int readTransferActive : 1;
+	int bufferWriteEnable : 1;
+	int bufferReadEnable : 1;
+	int reserved1 : 4;
+	int cardInserted : 1;
+	int cardStateStable : 1;
+	int cardDetectPinLevel : 1;
+	int writeProtectSwitchPinLevel : 1;
+	int lineSignalLevel3to0 : 4;
+	int cmdLineSignalLevel : 1;
+	int hostRegularVoltageStable : 1;
+	int reserved2 : 1;
+	int commandNotIssuedByError : 1;
+	int subCommandStatus : 1;
+	int inDormantState : 1;
+	int laneSync : 1;
+	int uhs2IfDetection : 1;
+};
+
+struct __attribute__((__packed__)) SDRegisterMap {
+	char reserved1[14];
+	struct CommandRegister commandRegister;
+	char reserved2[20];
+	struct PresentStateRegister presentStateRegister;
 };
