@@ -36,10 +36,10 @@ static void
 issue_sd_command() {
 
 	/* (1) Check Command Inhibit (CMD) until it is free. */
-	while (read32(SDHC_BASE + EMMC_STATUS) & COMMAND_INHIBIT_CMD);
+	// while (read32(SDHC_BASE + EMMC_STATUS) & COMMAND_INHIBIT_CMD);
 
 	/* (2) Issue the command with the busy signal? */
-	
+
 }
 
 void c_entry() {

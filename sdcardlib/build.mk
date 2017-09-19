@@ -1,0 +1,2 @@
+
+OBJS += sdcardlib/sd.o

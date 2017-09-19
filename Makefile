@@ -1,8 +1,30 @@
-all:
-	arm-none-eabi-as -mcpu=arm926ej-s -g startup.S -o startup.o
-	arm-none-eabi-gcc -c -mcpu=arm926ej-s -g test.c -o test.o
+
+# tools
+AR = arm-none-eabi-ar
+AS = arm-none-eabi-as
+CC = arm-none-eabi-gcc
+LD = arm-none-eabi-ld
+OBJCOPY = arm-none-eabi-objcopy
+OBJDUMP = arm-none-eabi-objdump
+
+# flags
+CPU = arm926ej-s
+CFLAGS = -mcpu=$(CPU) -gstabs -marm \
+         -std=c99 -pedantic -Wall -Wextra -msoft-float -fPIC -mapcs-frame \
+         -fno-builtin-printf -fno-builtin-strcpy -Wno-overlength-strings \
+         -fno-builtin-exit
+ASFLAGS = -mcpu=$(CPU) -g
+
+OBJS = startup.o test.o
+
+include sdcardlib/build.mk
+
+test.bin: $(OBJS) test.ld
 	arm-none-eabi-ld -T test.ld test.o startup.o -o test.elf
 	arm-none-eabi-objcopy -O binary test.elf test.bin
 
 qemu:
 	qemu-system-arm -M versatilepb -m 128M -nographic -kernel test.bin
+
+clean:
+	rm -f $(OBJS) test.elf test.bin
