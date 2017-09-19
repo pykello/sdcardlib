@@ -1,6 +1,14 @@
 
 #include "sdcardlib/sd.h"
 
+/* integer types */
+typedef __signed char int8_t;
+typedef unsigned char uint8_t;
+typedef short int16_t;
+typedef unsigned short uint16_t;
+typedef int int32_t;
+typedef unsigned int uint32_t;
+
 /*
  * Physical Layer Spec v2.00, Page 49.
  */
@@ -28,6 +36,19 @@ enum CommandIndex {
 };
 
 /*
+ * Physical Layer Spec v2.00, Page 58
+ */
+enum ResponseType {
+	RESP_TYPE_NONE,
+	RESP_TYPE_R1,  /* Normal response command */
+	RESP_TYPE_R1b, /* R1 with busy signal */
+	RESP_TYPE_R2,  /* CID, CSD register */
+	RESP_TYPE_R3,  /* OCR register */
+	RESP_TYPE_R6,  /* Published RCA response */
+	RESP_TYPE_R7   /* Card interface condition */
+};
+
+/*
  * SD Host Controller Spec v4.20, Page 45.
  */
 struct CommandRegister {
@@ -36,7 +57,7 @@ struct CommandRegister {
 		RESP_LEN136 = 1,
 		RESP_LEN48 = 2,
 		RESP_LEN48_CHECK_BUSY = 3
-	} response_type_select : 2;
+	} response_type : 2;
 	/* 0 Main Command, 1 Sub Command. */
 	int sub_command_flag : 1;
 	/* Check CRC field in the response. */
@@ -47,7 +68,7 @@ struct CommandRegister {
 	 * 0 is used for (1) commands using only CMD line, (2) Commands with no data
 	 * transfer but using busy signal on DAT[0] line, (3) Resume command.
 	 */
-	int data_present_select : 1;
+	int data_present : 1;
 	/* 11b Abort, 10b Resume, 01b Suspend, 00 Other commands */
 	enum {
 		CMD_NORMAL = 0,
@@ -61,6 +82,26 @@ struct CommandRegister {
 	 */
 	enum CommandIndex command_index : 6;
 	int reserved : 2;
+};
+
+const struct CommandRegister command_idx_to_reg[] = {
+	[GO_IDLE_STATE] = {RESP_NONE, 0, 0, 0, 0, CMD_NORMAL, GO_IDLE_STATE, 0},
+	// [ALL_SEND_CID] = {RESP_TYPE_R2},
+	// [SEND_RELATIVE_ADDR] = {RESP_TYPE_R6},
+	// [SET_DSR] = {RESP_TYPE_NONE},
+	// [SELECT_DESELECT_CARD] = {RESP_TYPE_R1b},
+	// [SEND_IF_COND] = {RESP_TYPE_R7},
+	// [SEND_CSD] = {RESP_TYPE_R2},
+	// [SEND_CID] = {RESP_TYPE_R2},
+	// [STOP_TRANSMISSION] = {RESP_TYPE_R1b},
+	// [SEND_STATUS] = {RESP_TYPE_R1},
+	// [GO_INACTIVE_STATE] = {RESP_TYPE_NONE},
+	// [SET_BLOCKLEN] = {RESP_TYPE_R1},
+	// [READ_SINGLE_BLOCK] = {RESP_TYPE_R1},
+	// [READ_MULTIPLE_BLOCKS] = {RESP_TYPE_R1},
+	// [WRITE_SINGLE_BLOCK] = {RESP_TYPE_R1},
+	// [WRITE_MULTIPLE_BLOCKS] = {RESP_TYPE_R1},
+	// [PROGRAM_CSD] = {RESP_TYPE_R1}
 };
 
 /*
@@ -94,14 +135,47 @@ struct PresentStateRegister {
 };
 
 static volatile struct __attribute__((__packed__)) {
-	char reserved_1[14];
-	struct CommandRegister command_register;
-	char reserved_2[20];
-	struct PresentStateRegister present_state_register;
-} *sd_register_map;
+	char reserved_1[8];
+	uint32_t argument;
+	char reserved_2[4];
+	struct CommandRegister command;
+	char reserved_3[20];
+	struct PresentStateRegister present_state;
+} *sd_registers;
 
+
+static void issue_sd_command(enum CommandIndex idx, uint32_t arg);
+static void complete_sd_command(void);
 
 void set_sd_register_map_base(void *address) {
-	sd_register_map = address;
+	sd_registers = address;
 }
 
+/*
+ * SD Host Controller Spec v4.20, Page 91.
+ */
+static void
+issue_sd_command(enum CommandIndex idx, uint32_t arg) {
+	struct CommandRegister reg = command_idx_to_reg[idx];
+
+	while (sd_registers->present_state.command_inhibit_cmd);
+
+	if (reg.response_type == RESP_LEN48_CHECK_BUSY) {
+		if (reg.command_type != CMD_ABORT) {
+			while (sd_registers->present_state.command_inhibit_dat);
+		}
+	}
+
+	sd_registers->argument = arg;
+	sd_registers->command = reg;
+
+	complete_sd_command();
+}
+
+/*
+ * SD Host Controller Spec v4.20, Page 93.
+ */
+static void
+complete_sd_command(void) {
+	// TODO
+}
